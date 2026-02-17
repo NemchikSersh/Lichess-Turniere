@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lichess Турнир Менеджер - БУДУЩИЕ КМС</title>
+    <style>
+        :root {
+            --color-bg-base: #0f172a;
+            --color-bg-elevated: #1e293b;
+            --color-bg-surface: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-primary: #38bdf8;
+            --color-primary-hover: #0ea5e9;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-border: rgba(148, 163, 184, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--color-bg-base);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: var(--color-bg-elevated);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: var(--color-primary);
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .team-badge {
+            background: var(--color-bg-surface);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        .controls {
+            background: var(--color-bg-elevated);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        button {
+            background: var(--color-primary);
+            color: var(--color-bg-base);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--color-primary-hover);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-danger {
+            background: var(--color-error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--color-bg-elevated);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--color-primary);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin: 8px 0;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--color-bg-elevated);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--color-bg-surface);
+            color: var(--color-text-secondary);
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:not(:last-child) {
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tbody tr:hover {
+            background: var(--color-bg-surface);
+            cursor: pointer;
+        }
+
+        .rank {
+            font-weight: 700;
+            color: var(--color-primary);
+            font-size: 16px;
+        }
+
+        .points {
+            font-weight: 600;
+            color: var(--color-success);
+            font-size: 16px;
+        }
+
+        .tournament-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: var(--color-bg-surface);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tournament-name {
+            font-weight: 500;
+            color: var(--color-text-primary);
+        }
+
+        .tournament-points {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: var(--color-text-muted);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--color-bg-surface);
+            border-top: 3px solid var(--color-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--color-error);
+            color: var(--color-error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--color-success);
+            color: var(--color-success);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: var(--color-text-primary);
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--color-border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .player-card {
+            background: var(--color-bg-surface);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .player-card:hover {
+            background: #3f4d5f;
+            transform: translateY(-2px);
+        }
+
+        .player-card.selected {
+            background: var(--color-primary);
+            color: var(--color-bg-base);
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .player-card.selected .player-name {
+            color: var(--color-bg-base);
+        }
+
+        .player-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        .player-card.selected .player-stats {
+            color: var(--color-bg-base);
+        }
+
+        .filter-section {
+            background: var(--color-bg-surface);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--color-primary);
+            color: var(--color-bg-base);
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--color-success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .save-indicator.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏆 Lichess Турнир Менеджер</h1>
+            <div class="team-info">
+                <div class="team-badge">Команда: <strong>БУДУЩИЕ КМС</strong></div>
+                <div class="team-badge">ID: <strong>ngjgemHh</strong></div>
+                <div class="team-badge">💾 Автосохранение</div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <h3 style="margin-bottom: 16px; color: var(--color-text-primary);">Добавить турнир</h3>
+            
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <button class="tab" id="idModeBtn" onclick="switchMode('id')" style="flex: 1; border-radius: 8px; border: 2px solid var(--color-primary);">
+                    📝 По ID
+                </button>
+                <button class="tab" id="searchModeBtn" onclick="switchMode('search')" style="flex: 1; border-radius: 8px; border: 2px solid var(--color-border);">
+                    🔍 Поиск
+                </button>
+            </div>
+
+            <div id="idMode">
+                <div class="input-group">
+                    <input type="text" id="tournamentId" placeholder="ID турнира (например, abc123XY)" />
+                    <input type="text" id="tournamentName" placeholder="Название (необязательно)" />
+                    <button onclick="addTournament()">Загрузить турнир</button>
+                </div>
+                <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 8px;">
+                    💡 ID турнира находится в URL: lichess.org/tournament/<strong>abc123XY</strong>
+                </div>
+            </div>
+
+            <div id="searchMode" style="display: none;">
+                <div class="input-group">
+                    <input type="text" id="searchQuery" placeholder="Поиск турнира (например, 'Дружественный')" />
+                    <button onclick="searchTournaments()">Искать</button>
+                </div>
+                <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 8px;">
+                    🔍 Поиск командных турниров
+                </div>
+                <div id="searchResults" style="margin-top: 16px;"></div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">Обзор</button>
+            <button class="tab" onclick="switchTab('tournaments')">Турниры</button>
+            <button class="tab" onclick="switchTab('players')">Рейтинг игроков</button>
+            <button class="tab" onclick="switchTab('playerDetail')">По игроку</button>
+            <button class="btn-secondary" onclick="exportToExcel()" style="margin-left: auto; padding: 10px 20px;">
+                📊 Экспорт Excel
+            </button>
+            <button class="btn-danger" onclick="clearAllData()" style="padding: 10px 20px;">
+                🗑️ Очистить
+            </button>
+            <button class="btn-success" onclick="exportData()" style="padding: 10px 20px;">
+                💾 Экспорт данных
+            </button>
+            <button class="btn-secondary" onclick="document.getElementById('importFile').click()" style="padding: 10px 20px;">
+                📂 Импорт данных
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+
+        <div id="overviewTab" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h3>Всего очков</h3>
+                    <div class="stat-value" id="totalPoints">0</div>
+                    <div class="stat-label">Все турниры</div>
+                </div>
+                <div class="card">
+                    <h3>Турниры</h3>
+                    <div class="stat-value" id="tournamentCount">0</div>
+                    <div class="stat-label">Загружено турниров</div>
+                </div>
+                <div class="card">
+                    <h3>Участники</h3>
+                    <div class="stat-value" id="playerCount">0</div>
+                    <div class="stat-label">Активные игроки</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tournamentsTab" class="tab-content">
+            <div class="card">
+                <h3 class="section-title">Загруженные турниры</h3>
+                <div id="tournamentsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p>Турниры не добавлены</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Добавьте турниры по ID выше</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="playersTab" class="tab-content">
+            <div class="card">
+                <h3 class="section-title">Общий рейтинг игроков</h3>
+                <div id="playerRanking">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>Нет данных об игроках</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Загрузите турниры для просмотра рейтинга</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="playerDetailTab" class="tab-content">
+            <div class="card">
+                <div class="filter-section">
+                    <div class="filter-header">
+                        <h3 style="margin: 0;">Выберите игрока</h3>
+                        <button class="btn-secondary" onclick="clearPlayerFilter()" style="padding: 6px 12px; font-size: 13px;">
+                            Сбросить фильтр
+                        </button>
+                    </div>
+                    <select id="playerSelect" onchange="filterByPlayer()" style="width: 100%;">
+                        <option value="">-- Выберите игрока --</option>
+                    </select>
+                </div>
+                
+                <div id="playerDetailContent">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Выберите игрока из списка выше</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Вы увидите все турниры этого игрока</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка данных с Lichess...</p>
+        </div>
+
+        <div id="message"></div>
+        
+        <div id="saveIndicator" class="save-indicator">
+            💾 Данные сохранены
+        </div>
+    </div>
+
+    <script>
+        const TEAM_ID = 'ngjgemHh';
+        const STORAGE_KEY = 'lichess_tournaments_data';
+        let tournaments = [];
+        let playerScores = {};
+        let currentMode = 'id';
+        let selectedPlayer = null;
+
+        // Загрузка данных при старте
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromStorage();
+            updateUI();
+        });
+
+        function saveToStorage() {
+            try {
+                const data = {
+                    tournaments: tournaments,
+                    savedAt: new Date().toISOString()
+                };
+                const jsonData = JSON.stringify(data);
+                document.cookie = `${STORAGE_KEY}=${encodeURIComponent(jsonData)}; path=/; max-age=31536000`;
+                showSaveIndicator();
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === STORAGE_KEY) {
+                        const data = JSON.parse(decodeURIComponent(value));
+                        tournaments = data.tournaments || [];
+                        console.log('Загружено турниров:', tournaments.length);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                tournaments = [];
+            }
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        function clearAllData() {
+            if (confirm('Вы уверены? Все турниры будут удалены.')) {
+                tournaments = [];
+                playerScores = {};
+                document.cookie = `${STORAGE_KEY}=; path=/; max-age=0`;
+                updateUI();
+                showMessage('Все данные очищены', 'success');
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('idMode').style.display = mode === 'id' ? 'block' : 'none';
+            document.getElementById('searchMode').style.display = mode === 'search' ? 'block' : 'none';
+            
+            document.getElementById('idModeBtn').style.borderColor = mode === 'id' ? 'var(--color-primary)' : 'var(--color-border)';
+            document.getElementById('searchModeBtn').style.borderColor = mode === 'search' ? 'var(--color-primary)' : 'var(--color-border)';
+        }
+
+        async function searchTournaments() {
+            const query = document.getElementById('searchQuery').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (!query) {
+                showMessage('Введите поисковый запрос');
+                return;
+            }
+
+            showLoading(true);
+            resultsDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--color-text-muted);">Поиск...</div>';
+
+            try {
+                const response = await fetch(`https://lichess.org/api/team/${TEAM_ID}/arena`, {
+                    headers: { 'Accept': 'application/x-ndjson' }
+                });
+
+                if (!response.ok) throw new Error('Турниры команды недоступны');
+
+                const text = await response.text();
+                const lines = text.trim().split('\n').filter(line => line.length > 0);
+                const allTournaments = [];
+
+                for (const line of lines) {
+                    try {
+                        const tournament = JSON.parse(line);
+                        allTournaments.push(tournament);
+                    } catch (e) {
+                        console.warn('Ошибка парсинга:', e);
+                    }
+                }
+
+                const queryLower = query.toLowerCase();
+                const filtered = allTournaments.filter(t => 
+                    t.fullName && t.fullName.toLowerCase().includes(queryLower)
+                );
+
+                if (filtered.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>Турниры не найдены: "${query}"</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultsDiv.innerHTML = `
+                    <div style="margin-bottom: 12px; color: var(--color-text-secondary); font-weight: 600;">
+                        Найдено турниров: ${filtered.length}
+                    </div>
+                    ${filtered.map(tournament => {
+                        const alreadyAdded = tournaments.find(t => t.id === tournament.id);
+                        const date = new Date(tournament.startsAt).toLocaleDateString('ru-RU');
+                        
+                        return `
+                            <div class="tournament-item" style="margin-bottom: 8px;">
+                                <div>
+                                    <div class="tournament-name">${tournament.fullName}</div>
+                                    <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">
+                                        ${date} • ${tournament.nbPlayers || 0} игроков
+                                    </div>
+                                </div>
+                                <button 
+                                    onclick="addTournamentById('${tournament.id}', '${tournament.fullName.replace(/'/g, "\\'")}')"
+                                    ${alreadyAdded ? 'disabled' : ''}
+                                    style="padding: 8px 16px; font-size: 13px;">
+                                    ${alreadyAdded ? '✓ Добавлен' : '+ Добавить'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                `;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        Ошибка поиска: ${error.message}
+                    </div>
+                `;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function addTournamentById(tournamentId, tournamentName) {
+            if (tournaments.find(t => t.id === tournamentId)) {
+                showMessage('Этот турнир уже добавлен');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const tournamentInfo = await fetchTournamentInfo(tournamentId);
+                const results = await fetchTournamentResults(tournamentId);
+                const teamMembers = await getTeamMembers();
+                
+                const teamPlayers = filterTeamPlayers(results, teamMembers);
+                const totalPoints = teamPlayers.reduce((sum, p) => sum + p.score, 0);
+
+                tournaments.push({
+                    id: tournamentId,
+                    name: tournamentName || tournamentInfo.fullName || 'Неизвестный турнир',
+                    players: teamPlayers,
+                    totalPoints: totalPoints,
+                    date: new Date(tournamentInfo.startsAt).toLocaleDateString('ru-RU')
+                });
+
+                saveToStorage();
+                updatePlayerScores();
+                updateUI();
+                
+                showMessage(`${tournamentName} успешно добавлен!`, 'success');
+                
+                if (currentMode === 'search') {
+                    searchTournaments();
+                }
+            } catch (error) {
+                showMessage('Ошибка загрузки: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'playerDetail') {
+                updatePlayerSelect();
+            }
+        }
+
+        function showMessage(text, type = 'error') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = type;
+            messageDiv.textContent = text;
+            setTimeout(() => messageDiv.textContent = '', 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        async function addTournament() {
+            const tournamentId = document.getElementById('tournamentId').value.trim();
+            const tournamentName = document.getElementById('tournamentName').value.trim();
+
+            if (!tournamentId) {
+                showMessage('Введите ID турнира');
+                return;
+            }
+
+            await addTournamentById(tournamentId, tournamentName);
+            
+            document.getElementById('tournamentId').value = '';
+            document.getElementById('tournamentName').value = '';
+        }
+
+        async function fetchTournamentInfo(tournamentId) {
+            const response = await fetch(`https://lichess.org/api/tournament/${tournamentId}`);
+            if (!response.ok) throw new Error('Турнир не найден');
+            return await response.json();
+        }
+
+        async function fetchTournamentResults(tournamentId) {
+            const response = await fetch(`https://lichess.org/api/tournament/${tournamentId}/results`, {
+                headers: {
+                    'Accept': 'application/x-ndjson'
+                }
+            });
+            if (!response.ok) throw new Error('Результаты недоступны');
+            
+            const text = await response.text();
+            const lines = text.trim().split('\n').filter(line => line.length > 0);
+            const results = [];
+            
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line);
+                    results.push(data);
+                } catch (e) {
+                    console.warn('Ошибка парсинга:', e);
+                }
+            }
+            
+            return results;
+        }
+
+        async function getTeamMembers() {
+            try {
+                const response = await fetch(`https://lichess.org/api/team/${TEAM_ID}/users`);
+                if (!response.ok) return getStaticTeamMembers();
+                
+                const text = await response.text();
+                const lines = text.trim().split('\n').filter(line => line.length > 0);
+                const members = [];
+                
+                for (const line of lines) {
+                    try {
+                        const user = JSON.parse(line);
+                        if (user.id) members.push(user.id.toLowerCase());
+                    } catch (e) {
+                        console.warn('Ошибка парсинга члена команды');
+                    }
+                }
+                
+                return members.length > 0 ? members : getStaticTeamMembers();
+            } catch (error) {
+                return getStaticTeamMembers();
+            }
+        }
+
+        function getStaticTeamMembers() {
+            return [
+                'kvantomatat', 'broadway', 'morfius-13-2', 'musayelyanmarat', 'zer0bd',
+                'al_l_lil', 'aykachsheev', 'ahmet220118', 'michailovish72', 'murat-69',
+                'shoxjahondavronbekov', 'ks_were12', 'viktoriaslavyanskaya', 'zhigalko-uje-ne-tot',
+                'jbk-15', 'andrey092005', 'levonpropro1', 'berrcules', 'horde2024',
+                'homer_an', 'mangus_carlson', 'danil_shaydullin2014', 'vetalprz1991',
+                'vietdungtep2014', 'pl7k7k7k', 'thatsincredebletombox', 'luiscarlos2',
+                'hantiruz', 'sidbnskan_4d567', 'imhsofia'
+            ];
+        }
+
+        function filterTeamPlayers(allResults, teamMembers) {
+            const filtered = allResults.filter(player => {
+                const username = (player.username || '').toLowerCase();
+                return teamMembers.includes(username);
+            });
+            
+            return filtered.map(player => ({
+                username: player.username,
+                score: player.score || 0,
+                rank: player.rank || 0,
+                rating: player.rating || 0,
+                performance: player.performance || 0
+            }));
+        }
+
+        function updatePlayerScores() {
+            playerScores = {};
+            
+            tournaments.forEach(tournament => {
+                tournament.players.forEach(player => {
+                    if (!playerScores[player.username]) {
+                        playerScores[player.username] = {
+                            username: player.username,
+                            totalScore: 0,
+                            tournaments: [],
+                            tournamentCount: 0,
+                            avgScore: 0
+                        };
+                    }
+                    playerScores[player.username].totalScore += player.score;
+                    playerScores[player.username].tournaments.push({
+                        id: tournament.id,
+                        name: tournament.name,
+                        date: tournament.date,
+                        score: player.score,
+                        rank: player.rank
+                    });
+                    playerScores[player.username].tournamentCount += 1;
+                });
+            });
+
+            Object.values(playerScores).forEach(player => {
+                player.avgScore = Math.round(player.totalScore / player.tournamentCount);
+            });
+        }
+
+        function updateUI() {
+            const totalPoints = tournaments.reduce((sum, t) => sum + t.totalPoints, 0);
+            const uniquePlayers = Object.keys(playerScores).length;
+
+            document.getElementById('totalPoints').textContent = totalPoints;
+            document.getElementById('tournamentCount').textContent = tournaments.length;
+            document.getElementById('playerCount').textContent = uniquePlayers;
+
+            updateTournamentsList();
+            updatePlayerRanking();
+            updatePlayerSelect();
+        }
+
+        function updateTournamentsList() {
+            const container = document.getElementById('tournamentsList');
+            
+            if (tournaments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p>Турниры не добавлены</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tournaments.map((tournament, index) => `
+                <div class="tournament-item">
+                    <div>
+                        <div class="tournament-name">${tournament.name}</div>
+                        <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 4px;">
+                            ${tournament.date} • ${tournament.players.length} игроков
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="tournament-points">${tournament.totalPoints} очков</span>
+                        <button class="btn-danger" onclick="removeTournament(${index})" style="padding: 6px 12px; font-size: 13px;">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePlayerRanking() {
+            const container = document.getElementById('playerRanking');
+            
+            if (Object.keys(playerScores).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>Нет данных об игроках</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const sortedPlayers = Object.values(playerScores)
+                .sort((a, b) => b.totalScore - a.totalScore);
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Место</th>
+                            <th>Игрок</th>
+                            <th>Турниры</th>
+                            <th>Средний балл</th>
+                            <th>Всего</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedPlayers.map((player, index) => `
+                            <tr onclick="selectPlayerFromRanking('${player.username}')">
+                                <td class="rank">#${index + 1}</td>
+                                <td>${player.username}</td>
+                                <td>${player.tournamentCount}</td>
+                                <td>${player.avgScore}</td>
+                                <td class="points">${player.totalScore}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function updatePlayerSelect() {
+            const select = document.getElementById('playerSelect');
+            const sortedPlayers = Object.values(playerScores)
+                .sort((a, b) => a.username.localeCompare(b.username));
+
+            select.innerHTML = '<option value="">-- Выберите игрока --</option>' +
+                sortedPlayers.map(player => 
+                    `<option value="${player.username}">${player.username} (${player.tournamentCount} турниров)</option>`
+                ).join('');
+        }
+
+        function selectPlayerFromRanking(username) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const playerTab = document.querySelectorAll('.tab')[3];
+            playerTab.classList.add('active');
+            document.getElementById('playerDetailTab').classList.add('active');
+            
+            document.getElementById('playerSelect').value = username;
+            filterByPlayer();
+        }
+
+        function filterByPlayer() {
+            const username = document.getElementById('playerSelect').value;
+            const container = document.getElementById('playerDetailContent');
+
+            if (!username) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Выберите игрока из списка</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const player = playerScores[username];
+            if (!player) return;
+
+            const playerTournaments = player.tournaments.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            container.innerHTML = `
+                <div style="background: var(--color-bg-surface); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h2 style="color: var(--color-primary); margin-bottom: 16px;">👤 ${username}</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div>
+                            <div style="font-size: 14px; color: var(--color-text-muted);">Всего очков</div>
+                            <div style="font-size: 28px; font-weight: 700; color: var(--color-success);">${player.totalScore}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; color: var(--color-text-muted);">Турниров</div>
+                            <div style="font-size: 28px; font-weight: 700;">${player.tournamentCount}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; color: var(--color-text-muted);">Средний балл</div>
+                            <div style="font-size: 28px; font-weight: 700;">${player.avgScore}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 16px; color: var(--color-text-primary);">
+                    История турниров <span class="badge">${playerTournaments.length}</span>
+                </h3>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Турнир</th>
+                            <th>Дата</th>
+                            <th>Место</th>
+                            <th>Очки</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${playerTournaments.map(t => `
+                            <tr>
+                                <td>${t.name}</td>
+                                <td>${t.date}</td>
+                                <td class="rank">#${t.rank}</td>
+                                <td class="points">${t.score}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function clearPlayerFilter() {
+            document.getElementById('playerSelect').value = '';
+            filterByPlayer();
+        }
+
+        function removeTournament(index) {
+            if (confirm('Удалить этот турнир?')) {
+                tournaments.splice(index, 1);
+                saveToStorage();
+                updatePlayerScores();
+                updateUI();
+                showMessage('Турнир удален', 'success');
+            }
+        }
+
+        function exportData() {
+            if (tournaments.length === 0) {
+                showMessage('Нет данных для экспорта');
+                return;
+            }
+
+            const data = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                teamId: TEAM_ID,
+                tournaments: tournaments
+            };
+
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `lichess_data_${TEAM_ID}_${new Date().toISOString().split('T')[0]}.json`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('Данные экспортированы! Сохраните файл для резервной копии', 'success');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.tournaments || !Array.isArray(data.tournaments)) {
+                        throw new Error('Неверный формат файла');
+                    }
+
+                    if (tournaments.length > 0) {
+                        if (!confirm(`У вас уже есть ${tournaments.length} турнир(ов). Объединить с импортированными данными?`)) {
+                            return;
+                        }
+                    }
+
+                    const existingIds = new Set(tournaments.map(t => t.id));
+                    let addedCount = 0;
+                    
+                    data.tournaments.forEach(tournament => {
+                        if (!existingIds.has(tournament.id)) {
+                            tournaments.push(tournament);
+                            addedCount++;
+                        }
+                    });
+
+                    saveToStorage();
+                    updatePlayerScores();
+                    updateUI();
+                    
+                    showMessage(`Импортировано турниров: ${addedCount}. Пропущено дубликатов: ${data.tournaments.length - addedCount}`, 'success');
+                } catch (error) {
+                    showMessage('Ошибка импорта: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function exportToExcel() {
+            if (tournaments.length === 0) {
+                showMessage('Нет данных для экспорта');
+                return;
+            }
+
+            let csv = '\uFEFF';
+            
+            csv += 'Lichess Турнир Менеджер - Общая статистика\n';
+            csv += `Команда: БУДУЩИЕ КМС (${TEAM_ID})\n`;
+            csv += `Дата экспорта: ${new Date().toLocaleDateString('ru-RU')}\n\n`;
+            
+            csv += `Общая статистика\n`;
+            csv += `Всего очков,${tournaments.reduce((sum, t) => sum + t.totalPoints, 0)}\n`;
+            csv += `Турниров,${tournaments.length}\n`;
+            csv += `Участников,${Object.keys(playerScores).length}\n\n`;
+            
+            csv += 'Рейтинг игроков\n';
+            csv += 'Место,Игрок,Турниров,Средний балл,Всего очков\n';
+            
+            const sortedPlayers = Object.values(playerScores)
+                .sort((a, b) => b.totalScore - a.totalScore);
+            
+            sortedPlayers.forEach((player, index) => {
+                csv += `${index + 1},${player.username},${player.tournamentCount},${player.avgScore},${player.totalScore}\n`;
+            });
+            
+            csv += '\n\nДетали турниров\n';
+            csv += 'Название,Дата,Игроков,Всего очков\n';
+            
+            tournaments.forEach(tournament => {
+                csv += `"${tournament.name}",${tournament.date},${tournament.players.length},${tournament.totalPoints}\n`;
+            });
+            
+            csv += '\n\nРезультаты по турнирам\n';
+            
+            tournaments.forEach(tournament => {
+                csv += `\n"${tournament.name}" - ${tournament.date}\n`;
+                csv += 'Игрок,Очки,Место,Рейтинг\n';
+                
+                tournament.players
+                    .sort((a, b) => b.score - a.score)
+                    .forEach(player => {
+                        csv += `${player.username},${player.score},${player.rank},${player.rating}\n`;
+                    });
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `lichess_turniry_${TEAM_ID}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('Excel-файл успешно экспортирован!', 'success');
+        }
+    </script>
+</body>
+</html>
