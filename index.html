@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lichess Менеджер - БУДУЩИЕ КМС</title>
+    <style>
+        :root {
+            --color-bg-base: #0f172a;
+            --color-bg-elevated: #1e293b;
+            --color-bg-surface: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-primary: #38bdf8;
+            --color-primary-hover: #0ea5e9;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+            --color-border: rgba(148, 163, 184, 0.2);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: var(--color-bg-base); color: var(--color-text-primary); padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header, .controls, .card { background: var(--color-bg-elevated); padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .team-badge { background: var(--color-bg-surface); padding: 6px 12px; border-radius: 6px; font-size: 14px; display: inline-block; margin-right: 10px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        input, select { background: var(--color-bg-surface); border: 1px solid var(--color-border); color: white; padding: 10px; border-radius: 8px; flex: 1; min-width: 150px; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .cb-container { display: flex; align-items: center; cursor: pointer; user-select: none; }
+        .cb-container input { width: 18px; height: 18px; margin-right: 10px; flex: none; min-width: auto; cursor: pointer; }
+        button { border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-main { background: var(--color-primary); color: #000; }
+        .btn-main:hover { background: var(--color-primary-hover); }
+        .btn-success { background: var(--color-success); color: white; }
+        .btn-danger { background: var(--color-error); color: white; }
+        .btn-secondary { background: var(--color-bg-surface); color: white; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+        .tab { background: transparent; color: var(--color-text-muted); border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 15px; }
+        .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--color-border); }
+        th { color: var(--color-text-muted); font-size: 12px; text-transform: uppercase; }
+        .points { color: var(--color-success); font-weight: bold; }
+        .tournament-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--color-bg-surface); border-radius: 8px; margin-bottom: 8px; }
+        .tournament-item.disabled { opacity: 0.5; filter: grayscale(0.5); }
+        .loading { display: none; text-align: center; padding: 20px; color: var(--color-warning); font-weight: bold; }
+        .loading.active { display: block; }
+        #message { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 8px; z-index: 1000; display: none; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏆 Lichess Менеджер Команды</h1>
+        <div style="margin-top:10px;">
+            <div class="team-badge">Команда: <strong>БУДУЩИЕ КМС</strong></div>
+            <div class="team-badge">ID: <strong>ngjgemHh</strong></div>
+        </div>
+    </header>
+
+    <div class="controls">
+        <div class="tabs" style="border:none;">
+            <button class="tab active" id="modeId" onclick="switchInputMode('id')">📝 По ID</button>
+            <button class="tab" id="modeSearch" onclick="switchInputMode('search')">🚀 Авто-поиск</button>
+        </div>
+
+        <div id="idInputSection">
+            <div class="input-group">
+                <input type="text" id="tId" placeholder="ID турнира (например, BXmTRYAv)">
+                <button class="btn-main" onclick="addOne()">Загрузить</button>
+            </div>
+        </div>
+
+        <div id="searchInputSection" style="display:none;">
+            <div class="input-group">
+                <input type="text" id="sQuery" placeholder="Фильтр по названию">
+                <button class="btn-success" onclick="runSearch()">Найти последние турниры</button>
+            </div>
+            <div id="searchRes" style="max-height: 400px; overflow-y: auto; border-top: 1px solid var(--color-border); margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="openTab(event, 'view-main')">Обзор</button>
+        <button class="tab" onclick="openTab(event, 'view-list')">Турниры</button>
+        <button class="tab" onclick="openTab(event, 'view-rating')">Рейтинг</button>
+        <button class="tab" onclick="openTab(event, 'view-player')">По игроку</button>
+        <div style="margin-left:auto; display:flex; gap:5px;">
+            <button class="btn-secondary" onclick="exportExcel()">Excel</button>
+            <button class="btn-secondary" onclick="exportJson()">Экспорт</button>
+            <button class="btn-secondary" onclick="document.getElementById('imp').click()">Импорт</button>
+            <input type="file" id="imp" hidden onchange="importJson(event)">
+            <button class="btn-danger" onclick="clearData()">Очистить всё</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">⏳ <span id="loadTxt">Загрузка...</span></div>
+    <div id="message"></div>
+
+    <div id="view-main" class="tab-content active">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <div class="card"><h3>Очки команды</h3><div id="stat-pts" style="font-size:32px;">0</div></div>
+            <div class="card"><h3>Турниры (активные)</h3><div id="stat-t" style="font-size:32px;">0</div></div>
+            <div class="card"><h3>Активные игроки</h3><div id="stat-p" style="font-size:32px;">0</div></div>
+        </div>
+    </div>
+
+    <div id="view-list" class="tab-content">
+        <div class="card" id="list-t"></div>
+    </div>
+
+    <div id="view-rating" class="tab-content">
+        <div class="card" style="padding: 15px; margin-bottom: 15px;">
+            <div class="input-group">
+                <span style="color: var(--color-text-muted); font-size: 13px;">ВИД ТУРНИРА:</span>
+                <select id="filterType" onchange="handleFilterChange()">
+                    <option value="">Все виды</option>
+                </select>
+            </div>
+            <div class="input-group" style="margin-bottom: 0;">
+                <span style="color: var(--color-text-muted); font-size: 13px;">ПЕРИОД:</span>
+                <label for="dateFrom">С</label>
+                <input type="date" id="dateFrom" onchange="handleFilterChange()">
+                <label for="dateTo">По</label>
+                <input type="date" id="dateTo" onchange="handleFilterChange()">
+                <button class="btn-secondary" onclick="resetFilters()">Сброс</button>
+            </div>
+        </div>
+        <div class="card" id="list-r"></div>
+    </div>
+
+    <div id="view-player" class="tab-content">
+        <div class="card">
+            <select id="sel-p" onchange="showPlayerStats()" style="width:100%; margin-bottom:20px;">
+                <option value="">-- Выберите игрока --</option>
+            </select>
+            <div id="player-res"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const TEAM = 'ngjgemHh';
+let data = []; 
+let players = {}; 
+let lastSearchResults = []; 
+
+window.onload = () => {
+    const saved = document.cookie.split('; ').find(r => r.trim().startsWith('lic_data_v2='));
+    if (saved) {
+        try { data = JSON.parse(decodeURIComponent(saved.split('=')[1])); } catch(e){}
+    }
+
+    const sFrom = localStorage.getItem('lic_filter_from');
+    const sTo = localStorage.getItem('lic_filter_to');
+    const sType = localStorage.getItem('lic_filter_type');
+    
+    if(sFrom) document.getElementById('dateFrom').value = sFrom;
+    if(sTo) document.getElementById('dateTo').value = sTo;
+    
+    updateTypeSelector();
+    if(sType) document.getElementById('filterType').value = sType;
+
+    refresh();
+};
+
+function save() {
+    document.cookie = `lic_data_v2=${encodeURIComponent(JSON.stringify(data))}; path=/; max-age=31536000`;
+}
+
+// Обновление списка видов турниров в выпадающем меню
+function updateTypeSelector() {
+    const sel = document.getElementById('filterType');
+    const currentVal = sel.value;
+    
+    // Пытаемся выделить общее название (например из "Lichess Mega Marathon" берем начало или ищем паттерны)
+    // Но проще всего предложить уникальные полные имена или ключевые слова
+    const types = new Set();
+    data.forEach(t => {
+        if (t.n.includes('Lichess Liga')) types.add('Lichess Liga');
+        else if (t.n.includes('Lichess Mega')) types.add('Lichess Mega');
+        else if (t.n.includes('Rapid League')) types.add('Rapid League');
+        else types.add(t.n.split(' #')[0].split(' 第')[0]); // Обрезаем номера серий
+    });
+
+    sel.innerHTML = '<option value="">Все виды</option>';
+    Array.from(types).sort().forEach(type => {
+        sel.innerHTML += `<option value="${type}">${type}</option>`;
+    });
+    sel.value = currentVal;
+}
+
+function handleFilterChange() {
+    localStorage.setItem('lic_filter_from', document.getElementById('dateFrom').value);
+    localStorage.setItem('lic_filter_to', document.getElementById('dateTo').value);
+    localStorage.setItem('lic_filter_type', document.getElementById('filterType').value);
+    refresh();
+}
+
+function resetFilters() {
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    document.getElementById('filterType').value = '';
+    handleFilterChange();
+}
+
+function openTab(e, id) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(e) e.currentTarget.classList.add('active');
+}
+
+function switchInputMode(m) {
+    document.getElementById('idInputSection').style.display = m === 'id' ? 'block' : 'none';
+    document.getElementById('searchInputSection').style.display = m === 'search' ? 'block' : 'none';
+    document.getElementById('modeId').classList.toggle('active', m === 'id');
+    document.getElementById('modeSearch').classList.toggle('active', m === 'search');
+}
+
+function toggleTournament(idx) {
+    data[idx].disabled = !data[idx].disabled;
+    save();
+    refresh();
+}
+
+async function addOne() {
+    const id = document.getElementById('tId').value.trim();
+    if (!id) return msg('Введите ID');
+    await fetchTournament(id);
+    document.getElementById('tId').value = '';
+}
+
+async function runSearch() {
+    const q = document.getElementById('sQuery').value.toLowerCase();
+    const box = document.getElementById('searchRes');
+    box.innerHTML = '<p style="padding:20px;">Загрузка...</p>';
+    try {
+        const res = await fetch(`https://lichess.org/api/team/${TEAM}/arena`);
+        const text = await res.text();
+        const all = text.trim().split('\n').map(l => JSON.parse(l));
+        
+        lastSearchResults = all.filter(t => !q || t.fullName.toLowerCase().includes(q)).slice(0, 20);
+        const newOnes = lastSearchResults.filter(t => !data.find(ex => ex.id === t.id));
+        
+        let html = `<div style="padding:15px 10px; display:flex; justify-content:space-between; align-items:center; background:var(--color-bg-base); margin-bottom:10px; border-radius:8px;">
+            <span>Найдено: <b>${lastSearchResults.length}</b></span>
+            ${newOnes.length > 0 ? `<button class="btn-success" onclick="addAllFound()">➕ Добавить новые (${newOnes.length})</button>` : '<span>Все в базе</span>'}
+        </div>`;
+
+        html += lastSearchResults.map(t => {
+            const added = data.find(ex => ex.id === t.id);
+            return `<div class="tournament-item">
+                <span>${t.fullName} <br><small style="color:var(--color-text-muted)">${new Date(t.startsAt).toLocaleDateString()}</small></span>
+                <button onclick="fetchTournament('${t.id}')" ${added ? 'disabled' : ''} class="${added ? 'btn-secondary' : 'btn-main'}">
+                    ${added ? '✓' : 'Добавить'}
+                </button>
+            </div>`;
+        }).join('');
+        box.innerHTML = html;
+    } catch (e) { box.innerHTML = '<p style="padding:20px; color:red;">Ошибка связи</p>'; }
+}
+
+async function addAllFound() {
+    const newOnes = lastSearchResults.filter(t => !data.find(ex => ex.id === t.id));
+    if(newOnes.length === 0) return;
+    toggleLoad(true);
+    for (let i = 0; i < newOnes.length; i++) {
+        const t = newOnes[i];
+        document.getElementById('loadTxt').textContent = `Загрузка (${i+1}/${newOnes.length})`;
+        await fetchTournament(t.id, false);
+    }
+    toggleLoad(false);
+    updateTypeSelector();
+    refresh();
+    runSearch();
+    msg('Готово!', 'success');
+}
+
+async function fetchTournament(id, updateUI = true) {
+    if (data.find(t => t.id === id)) return;
+    if (updateUI) toggleLoad(true);
+    try {
+        const [info, resText] = await Promise.all([
+            fetch(`https://lichess.org/api/tournament/${id}`).then(r => r.json()),
+            fetch(`https://lichess.org/api/tournament/${id}/results`).then(r => r.text())
+        ]);
+
+        const results = resText.trim().split('\n').map(l => JSON.parse(l));
+        const teamResults = results.filter(p => p.team && p.team.toLowerCase() === TEAM.toLowerCase()).map(p => ({
+            u: p.username, s: p.score, r: p.rank
+        }));
+
+        data.push({
+            id: id, n: info.fullName, d: info.startsAt,
+            p: teamResults, pts: teamResults.reduce((s, p) => s + p.s, 0),
+            disabled: false
+        });
+
+        save();
+        if (updateUI) { 
+            updateTypeSelector();
+            refresh(); 
+            msg('Добавлено!', 'success'); 
+            runSearch(); 
+        }
+    } catch (e) { msg('Ошибка ID'); }
+    finally { if (updateUI) toggleLoad(false); }
+}
+
+function refresh() {
+    players = {};
+    const fromDate = document.getElementById('dateFrom').value;
+    const toDate = document.getElementById('dateTo').value;
+    const typeFilter = document.getElementById('filterType').value;
+
+    let activeCount = 0;
+    let totalScore = 0;
+
+    data.forEach((t, idx) => {
+        if (t.disabled) return;
+        
+        // Фильтр по виду (названию)
+        if (typeFilter && !t.n.includes(typeFilter)) return;
+
+        // Фильтр по датам
+        const tDate = t.d.split('T')[0];
+        if (fromDate && tDate < fromDate) return;
+        if (toDate && tDate > toDate) return;
+
+        activeCount++;
+        totalScore += t.pts;
+
+        t.p.forEach(p => {
+            if (!players[p.u]) players[p.u] = { s: 0, c: 0, t: [] };
+            players[p.u].s += p.s;
+            players[p.u].c += 1;
+            players[p.u].t.push({ n: t.n, d: new Date(t.d).toLocaleDateString(), s: p.s, r: p.r });
+        });
+    });
+
+    document.getElementById('stat-pts').textContent = totalScore;
+    document.getElementById('stat-t').textContent = activeCount;
+    document.getElementById('stat-p').textContent = Object.keys(players).length;
+    
+    document.getElementById('list-t').innerHTML = data.slice().reverse().map((t, i) => {
+        const actualIdx = data.length - 1 - i;
+        return `
+        <div class="tournament-item ${t.disabled ? 'disabled' : ''}">
+            <label class="cb-container">
+                <input type="checkbox" ${t.disabled ? '' : 'checked'} onchange="toggleTournament(${actualIdx})">
+                <div>
+                    <strong>${t.n}</strong><br>
+                    <small>${new Date(t.d).toLocaleDateString()} • Игроков: ${t.p.length}</small>
+                </div>
+            </label>
+            <div>
+                <span class="points" style="margin-right:15px;">${t.pts}</span>
+                <button class="btn-danger" onclick="remT(${actualIdx})">✕</button>
+            </div>
+        </div>`}).join('') || '<p style="padding:20px; color:var(--color-text-muted)">Список пуст</p>';
+    
+    const sorted = Object.entries(players).sort((a, b) => b[1].s - a[1].s);
+    document.getElementById('list-r').innerHTML = `<table><tr><th>#</th><th>Игрок</th><th>Турниры</th><th>Очки</th></tr>
+        ${sorted.map((p, i) => `<tr><td>${i+1}</td><td>${p[0]}</td><td>${p[1].c}</td><td class="points">${p[1].s}</td></tr>`).join('')}</table>`;
+    
+    const sel = document.getElementById('sel-p');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">-- Выберите игрока --</option>' + Object.keys(players).sort().map(p => `<option value="${p}">${p}</option>`).join('');
+    sel.value = cur;
+}
+
+function showPlayerStats() {
+    const u = document.getElementById('sel-p').value;
+    const box = document.getElementById('player-res');
+    if (!u) return box.innerHTML = '';
+    const p = players[u];
+    box.innerHTML = `<div style="padding:15px; background:var(--color-bg-base); border-radius:8px; margin-top:10px;">
+        <h3>${u}</h3><p>В текущем фильтре: <b class="points">${p.s}</b> очков в ${p.c} турнирах</p>
+        <table style="margin-top:15px;"><tr><th>Турнир</th><th>Очки</th><th>Место</th></tr>
+        ${p.t.map(t => `<tr><td>${t.n}</td><td class="points">${t.s}</td><td>#${t.r}</td></tr>`).join('')}</table></div>`;
+}
+
+function remT(i) { if(confirm('Удалить?')) { data.splice(i, 1); save(); updateTypeSelector(); refresh(); runSearch(); } }
+function clearData() { if(confirm('Удалить ВСЁ?')) { data = []; save(); updateTypeSelector(); refresh(); runSearch(); } }
+function toggleLoad(s) { document.getElementById('loading').classList.toggle('active', s); }
+function msg(t, type='error') { 
+    const m = document.getElementById('message');
+    m.textContent = t; m.style.display = 'block'; 
+    m.style.background = type === 'error' ? 'var(--color-error)' : 'var(--color-success)';
+    setTimeout(() => m.style.display = 'none', 3000);
+}
+
+function exportExcel() {
+    let csv = "\uFEFFИгрок,Турниров,Всего очков\n";
+    Object.entries(players).sort((a,b)=>b[1].s-a[1].s).forEach(p => csv += `${p[0]},${p[1].c},${p[1].s}\n`);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+    link.download = `rating_${TEAM}.csv`; link.click();
+}
+
+function exportJson() {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: 'application/json'}));
+    link.download = `backup_${TEAM}.json`; link.click();
+}
+
+function importJson(e) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try { 
+            const imported = JSON.parse(ev.target.result); 
+            data = Array.isArray(imported) ? imported : (imported.tournaments || []);
+            save(); updateTypeSelector(); refresh(); msg('Импортировано', 'success'); 
+        } catch(e) { msg('Ошибка файла'); }
+    };
+    reader.readAsText(e.target.files[0]);
+    e.target.value = '';
+}
+</script>
+</body>
+</html>
